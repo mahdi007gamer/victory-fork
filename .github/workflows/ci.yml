@@ -57,3 +57,23 @@ jobs:
           path: ci-output/
           if-no-files-found: error
           retention-days: 14
+
+  independent-tools:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Reference tests and diagnostics package
+        shell: pwsh
+        run: |
+          $zip = ./tools/independent.ps1 -Action Package | Select-Object -Last 1
+          if (-not (Test-Path -LiteralPath $zip -PathType Leaf)) { throw 'Missing diagnostics ZIP' }
+          Copy-Item -LiteralPath $zip -Destination (Join-Path $env:RUNNER_TEMP 'victory-diagnostics.zip')
+      - uses: actions/upload-artifact@v4
+        with:
+          name: victory-diagnostics-${{ github.sha }}
+          path: ${{ runner.temp }}/victory-diagnostics.zip
+          if-no-files-found: error
+          retention-days: 14
